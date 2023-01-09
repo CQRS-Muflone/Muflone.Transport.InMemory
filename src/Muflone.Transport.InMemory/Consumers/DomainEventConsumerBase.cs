@@ -1,0 +1,53 @@
+﻿using Microsoft.Extensions.Logging;
+using Muflone.Messages.Events;
+using Muflone.Transport.InMemory.Abstracts;
+
+namespace Muflone.Transport.InMemory.Consumers;
+
+public abstract class DomainEventConsumerBase<T> : IDomainEventConsumer<T>, IAsyncDisposable where T : class, IDomainEvent
+{
+    public string TopicName { get; }
+
+    private readonly Persistence.ISerializer _messageSerializer;
+    private readonly ILogger _logger;
+
+    protected abstract IEnumerable<IDomainEventHandlerAsync<T>> HandlersAsync { get; }
+
+    protected DomainEventConsumerBase(ILoggerFactory loggerFactory,
+        Persistence.ISerializer? messageSerializer = null)
+    {
+        TopicName = typeof(T).Name;
+
+        _logger = loggerFactory.CreateLogger(GetType()) ?? throw new ArgumentNullException(nameof(loggerFactory));
+        _messageSerializer = messageSerializer ?? new Persistence.Serializer();
+    }
+
+    public Task StartAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+    public Task StopAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+    public async Task ConsumeAsync(T message, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            if (message == null)
+                throw new ArgumentNullException(nameof(message));
+
+            foreach (var handlerAsync in HandlersAsync)
+            {
+                await handlerAsync.HandleAsync((dynamic)message, cancellationToken);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                $"An error occurred processing domainEvent {typeof(T).Name}. StackTrace: {ex.StackTrace} - Source: {ex.Source} - Message: {ex.Message}");
+            throw;
+        }
+    }
+
+    #region Dispose
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+
+    #endregion
+}
