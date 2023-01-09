@@ -13,6 +13,8 @@
     <RepositoryType>Git</RepositoryType>
     <PackageTags>Broker, InMemory, CQRS, Saga, Event Sourcing, Event Store, Service Bus</PackageTags>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
