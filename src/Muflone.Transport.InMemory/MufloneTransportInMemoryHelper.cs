@@ -9,13 +9,13 @@ public static class MufloneTransportInMemoryHelper
 	public static IServiceCollection AddMufloneTransportInMemory(this IServiceCollection services,
 		IEnumerable<IConsumer> messageConsumers)
 	{
+		services.AddSingleton<IServiceBus, ServiceBus>();
+		services.AddSingleton<IEventBus, ServiceBus>();
+
 		foreach (var consumer in messageConsumers)
 		{
 			consumer.StartAsync(CancellationToken.None);
 		}
-
-		services.AddSingleton<IServiceBus, ServiceBus>();
-		services.AddSingleton<IEventBus, ServiceBus>();
 
 		return services;
 	}

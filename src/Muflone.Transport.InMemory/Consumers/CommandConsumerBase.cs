@@ -10,48 +10,68 @@ namespace Muflone.Transport.InMemory.Consumers;
 /// <typeparam name="T"></typeparam>
 public abstract class CommandConsumerBase<T> : ICommandConsumer<T>, IAsyncDisposable where T : class, ICommand
 {
-    public string TopicName { get; }
+	public string TopicName { get; }
 
-    private readonly ILogger _logger;
+	private readonly ILogger _logger;
 
-    protected abstract ICommandHandlerAsync<T> HandlerAsync { get; }
+	protected abstract ICommandHandlerAsync<T> HandlerAsync { get; }
 
-    protected CommandConsumerBase(ILoggerFactory loggerFactory)
-    {
-        TopicName = typeof(T).Name;
+	protected CommandConsumerBase(ILoggerFactory loggerFactory)
+	{
+		TopicName = typeof(T).Name;
 
-        _logger = loggerFactory.CreateLogger(GetType()) ?? throw new ArgumentNullException(nameof(loggerFactory));
-    }
+		_logger = loggerFactory.CreateLogger(GetType()) ?? throw new ArgumentNullException(nameof(loggerFactory));
+	}
 
-    public Task ConsumeAsync(T message, CancellationToken cancellationToken = default)
-    {
-        if (message == null)
-            throw new ArgumentNullException(nameof(message));
+	public Task ConsumeAsync(T message, CancellationToken cancellationToken = default)
+	{
+		if (message == null)
+			throw new ArgumentNullException(nameof(message));
 
-        return ConsumeAsyncCore(message, cancellationToken);
-    }
+		return ConsumeAsyncCore(message, cancellationToken);
+	}
 
-    private async Task ConsumeAsyncCore<T>(T message, CancellationToken cancellationToken)
-    {
-        try
-        {
-            if (message == null)
-                throw new ArgumentNullException(nameof(message));
+	private async Task ConsumeAsyncCore<T>(T message, CancellationToken cancellationToken)
+	{
+		try
+		{
+			if (message == null)
+				throw new ArgumentNullException(nameof(message));
 
-            await HandlerAsync.HandleAsync((dynamic)message, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, $"An error occurred processing command {typeof(T).Name}. StackTrace: {ex.StackTrace} - Source: {ex.Source} - Message: {ex.Message}");
-            throw;
-        }
-    }
+			await HandlerAsync.HandleAsync((dynamic)message, cancellationToken);
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex, $"An error occurred processing command {typeof(T).Name}. StackTrace: {ex.StackTrace} - Source: {ex.Source} - Message: {ex.Message}");
+			throw;
+		}
+	}
 
-    public Task StartAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+	public Task StartAsync(CancellationToken cancellationToken = default)
+	{
+		MufloneBroker.Commands.CollectionChanged += OnCommandReceived;
 
-    public Task StopAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+		return Task.CompletedTask;
+	}
 
-    #region Dispose
-    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
-    #endregion
+	public Task StopAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+	private void OnCommandReceived(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs args)
+	{
+		if (args.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
+		{
+			foreach (var item in args.NewItems)
+			{
+				if (item is T message)
+				{
+					Task.Run(async () => await ConsumeAsync(message));
+					MufloneBroker.Commands.Remove(message);
+				}
+			}
+		}
+	}
+
+	#region Dispose
+	public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+	#endregion
 }

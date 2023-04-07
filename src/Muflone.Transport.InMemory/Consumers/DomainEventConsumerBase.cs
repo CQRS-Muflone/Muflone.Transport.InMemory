@@ -6,48 +6,68 @@ namespace Muflone.Transport.InMemory.Consumers;
 
 public abstract class DomainEventConsumerBase<T> : IDomainEventConsumer<T>, IAsyncDisposable where T : class, IDomainEvent
 {
-    public string TopicName { get; }
+	public string TopicName { get; }
 
-    private readonly Persistence.ISerializer _messageSerializer;
-    private readonly ILogger _logger;
+	private readonly Persistence.ISerializer _messageSerializer;
+	private readonly ILogger _logger;
 
-    protected abstract IEnumerable<IDomainEventHandlerAsync<T>> HandlersAsync { get; }
+	protected abstract IEnumerable<IDomainEventHandlerAsync<T>> HandlersAsync { get; }
 
-    protected DomainEventConsumerBase(ILoggerFactory loggerFactory,
-        Persistence.ISerializer? messageSerializer = null)
-    {
-        TopicName = typeof(T).Name;
+	protected DomainEventConsumerBase(ILoggerFactory loggerFactory,
+		Persistence.ISerializer? messageSerializer = null)
+	{
+		TopicName = typeof(T).Name;
 
-        _logger = loggerFactory.CreateLogger(GetType()) ?? throw new ArgumentNullException(nameof(loggerFactory));
-        _messageSerializer = messageSerializer ?? new Persistence.Serializer();
-    }
+		_logger = loggerFactory.CreateLogger(GetType()) ?? throw new ArgumentNullException(nameof(loggerFactory));
+		_messageSerializer = messageSerializer ?? new Persistence.Serializer();
+	}
 
-    public Task StartAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+	public Task StartAsync(CancellationToken cancellationToken = default)
+	{
+		MufloneBroker.DomainEvents.CollectionChanged += OnEventReceived;
 
-    public Task StopAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+		return Task.CompletedTask;
+	}
 
-    public async Task ConsumeAsync(T message, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            if (message == null)
-                throw new ArgumentNullException(nameof(message));
+	public Task StopAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
-            foreach (var handlerAsync in HandlersAsync)
-            {
-                await handlerAsync.HandleAsync((dynamic)message, cancellationToken);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                $"An error occurred processing domainEvent {typeof(T).Name}. StackTrace: {ex.StackTrace} - Source: {ex.Source} - Message: {ex.Message}");
-            throw;
-        }
-    }
+	public async Task ConsumeAsync(T message, CancellationToken cancellationToken = default)
+	{
+		try
+		{
+			if (message == null)
+				throw new ArgumentNullException(nameof(message));
 
-    #region Dispose
-    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+			foreach (var handlerAsync in HandlersAsync)
+			{
+				await handlerAsync.HandleAsync((dynamic)message, cancellationToken);
+			}
+		}
+		catch (Exception ex)
+		{
+			_logger.LogError(ex,
+				$"An error occurred processing domainEvent {typeof(T).Name}. StackTrace: {ex.StackTrace} - Source: {ex.Source} - Message: {ex.Message}");
+			throw;
+		}
+	}
 
-    #endregion
+	private void OnEventReceived(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs @event)
+	{
+		if (@event.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
+		{
+			foreach (var item in @event.NewItems)
+			{
+				if (item is T message)
+				{
+					Task.Run(async () => await ConsumeAsync(message));
+					MufloneBroker.DomainEvents.Remove(message);
+				}
+			}
+		}
+	}
+
+	#region Dispose
+	public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+
+	#endregion
 }
