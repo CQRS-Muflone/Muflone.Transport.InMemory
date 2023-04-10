@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Authors>Alberto Acerbis - Alessandro Colla</Authors>
-    <Version>6.0.1</Version>
+    <Version>6.0.2</Version>
     <Description>InMemory Service bus support and wrappers for Muflone's CommandHandlers and EventHandlers</Description>
     <PackageProjectUrl>https://github.com/CQRS-Muflone/Muflone.Transport.InMemory</PackageProjectUrl>
     <PackageIcon>Logo.png</PackageIcon>
@@ -16,7 +16,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>Added helper to register the package and all its dependencies</PackageReleaseNotes>
+    <PackageReleaseNotes>Using an InMemory broker to dispath commands and events</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
