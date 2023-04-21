@@ -11,19 +11,11 @@ public static class MufloneBroker
 
 	public static void Send(ICommand command)
 	{
-		var exist = Commands.FirstOrDefault(x => x.MessageId.Equals(command.MessageId));
-		if (exist != null)
-			return;
-
 		Commands.Add(command);
 	}
 
 	public static void Publish(IEvent @event)
 	{
-		var exist = Events.FirstOrDefault(x => x.MessageId.Equals(@event.MessageId));
-		if (exist != null)
-			return;
-
 		Events.Add(@event);
 	}
 }
