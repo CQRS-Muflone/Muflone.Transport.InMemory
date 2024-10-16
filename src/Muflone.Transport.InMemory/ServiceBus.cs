@@ -48,7 +48,7 @@ public class ServiceBus : IServiceBus, IEventBus
 	}
 
 	private async Task PublishDomainEventAsyncCore<T>(T @event, CancellationToken cancellationToken = default)
-		where T : class, IDomainEvent
+		where T : DomainEvent
 	{
 		var domainEventConsumer = _serviceProvider.GetService<IDomainEventConsumer<T>>();
 		if (domainEventConsumer == null)
@@ -58,7 +58,7 @@ public class ServiceBus : IServiceBus, IEventBus
 	}
 
 	private async Task PublishIntegrationEventAsyncCore<T>(T @event, CancellationToken cancellationToken = default)
-		where T : class, IIntegrationEvent
+		where T : IntegrationEvent
 	{
 		var integrationEventConsumer = _serviceProvider.GetService<IIntegrationEventConsumer<T>>();
 		if (integrationEventConsumer == null)

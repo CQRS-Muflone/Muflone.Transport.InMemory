@@ -4,7 +4,7 @@ using Muflone.Transport.InMemory.Abstracts;
 
 namespace Muflone.Transport.InMemory.Consumers;
 
-public abstract class DomainEventConsumerBase<T> : IDomainEventConsumer<T>, IAsyncDisposable where T : class, IDomainEvent
+public abstract class DomainEventConsumerBase<T> : IDomainEventConsumer<T>, IAsyncDisposable where T : DomainEvent
 {
 	public string TopicName { get; }
 

@@ -4,7 +4,7 @@ using Muflone.Transport.InMemory.Abstracts;
 
 namespace Muflone.Transport.InMemory.Consumers;
 
-public abstract class IntegrationEventConsumerBase<T> : IIntegrationEventConsumer<T>, IAsyncDisposable where T : class, IIntegrationEvent
+public abstract class IntegrationEventConsumerBase<T> : IIntegrationEventConsumer<T>, IAsyncDisposable where T : IntegrationEvent
 {
 	public string TopicName { get; }
 
