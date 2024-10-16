@@ -11,7 +11,7 @@ public abstract class SagaStartedByConsumerBase<T> : ConsumerBase, ISagaStartedB
     
     	private readonly ILogger _logger;
     
-    	protected abstract ICommandHandlerAsync<T> HandlerAsync { get; }
+    	protected abstract ISagaStartedByAsync<T> HandlerAsync { get; }
 
 	    protected SagaStartedByConsumerBase(ILoggerFactory loggerFactory) : base(loggerFactory)
 	    {
@@ -35,7 +35,7 @@ public abstract class SagaStartedByConsumerBase<T> : ConsumerBase, ISagaStartedB
     			if (message == null)
     				throw new ArgumentNullException(nameof(message));
     
-    			await HandlerAsync.HandleAsync((dynamic)message, cancellationToken);
+    			await HandlerAsync.StartedByAsync((dynamic)message, cancellationToken);
     		}
     		catch (Exception ex)
     		{
