@@ -5,7 +5,7 @@ using Muflone.Transport.InMemory.Abstracts;
 namespace Muflone.Transport.InMemory.Consumers;
 
 /// <summary>
-/// TODO: Unify Consumer: ora ci sono Consumer diversi per Command e DomainEvent
+/// CommandConsumerBase
 /// </summary>
 /// <typeparam name="T"></typeparam>
 public abstract class CommandConsumerBase<T> : ICommandConsumer<T>, IAsyncDisposable where T : Command
