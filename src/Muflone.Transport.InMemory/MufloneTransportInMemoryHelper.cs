@@ -1,22 +1,19 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Muflone.Messages;
 using Muflone.Persistence;
-using Muflone.Transport.InMemory.Abstracts;
 
 namespace Muflone.Transport.InMemory;
 
 public static class MufloneTransportInMemoryHelper
 {
-	public static IServiceCollection AddMufloneTransportInMemory(this IServiceCollection services,
-		IEnumerable<IConsumer> messageConsumers)
+	public static IServiceCollection AddMufloneTransportInMemory(this IServiceCollection services)
 	{
-		services.AddSingleton<IServiceBus, ServiceBus>();
-		services.AddSingleton<IEventBus, ServiceBus>();
+		services.AddSingleton<IMessageSubscriber, InMemorySubscriber>();
+		services.AddSingleton<IServiceBus, InMemoryBus>();
+		services.AddSingleton<IEventBus, InMemoryBus>();
 
-		foreach (var consumer in messageConsumers)
-		{
-			consumer.StartAsync(CancellationToken.None);
-		}
-
+		services.AddHostedService<MessageHandlersStarter>();
+        
 		return services;
 	}
 }
