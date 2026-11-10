@@ -47,7 +47,36 @@ This registers the following services:
 | `IEventBus` | `InMemoryBus` | Singleton |
 | `MessageHandlersStarter` | Hosted service | — |
 
-### 2. Send a command
+### 2. Register your handlers
+
+Register your command and domain event handlers with the `AddCommandHandler` / `AddDomainEventHandler` extension methods (defined in `Muflone` core, in `MessageHandlerExtension`). They are transport-agnostic — the same methods you use with any Muflone transport:
+
+```csharp
+builder.Services.AddMufloneTransportInMemory();
+
+builder.Services.AddCommandHandler<CreateOrderCommandHandler>();
+builder.Services.AddDomainEventHandler<OrderCreatedEventHandler>();
+```
+
+Each handler type implements the usual Muflone handler interface, e.g.:
+
+```csharp
+public class CreateOrderCommandHandler(IRepository repository, ILoggerFactory loggerFactory)
+    : CommandHandlerAsync<CreateOrder>(repository, loggerFactory)
+{
+    public override Task HandleAsync(CreateOrder command, CancellationToken cancellationToken = default)
+    {
+        // handle the command
+        return Task.CompletedTask;
+    }
+}
+```
+
+At host startup the `MessageHandlersStarter` hosted service (registered by `AddMufloneTransportInMemory`) reads every registered handler type and subscribes it on `InMemorySubscriber`. No extra wiring is required — do **not** register `MessageHandlersStarter` yourself.
+
+> **Note:** the registered handler types are tracked in a static list inside `Muflone` core (`MessageHandlerExtension`) that is shared process-wide and never cleared. This is transparent for a normal application host, but be aware of it in test suites that build multiple hosts within a single process.
+
+### 3. Send a command
 
 Inject `IServiceBus` and call `SendAsync`:
 
@@ -62,7 +91,7 @@ public class MyService(IServiceBus serviceBus)
 }
 ```
 
-### 3. Publish an event
+### 4. Publish an event
 
 Inject `IEventBus` and call `PublishAsync`:
 
